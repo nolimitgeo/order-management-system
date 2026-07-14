@@ -24,9 +24,6 @@ def order_tracker(mock_storage):
     """
     return OrderTracker(mock_storage)
 
-#
-# --- TODO: add test functions below this line ---
-#
 def test_add_order_successfully(order_tracker, mock_storage):
     """Tests adding a new order with default 'pending' status."""
     order_tracker.add_order("ORD001", "Laptop", 1, "CUST001")
@@ -120,3 +117,21 @@ def test_list_orders_by_status_raises_empty_if_not_found(order_tracker, mock_sto
     # Simulate that the storage finds no existing orders
     mock_storage.get_all_orders.return_value = {}
     assert order_tracker.list_orders_by_status("shipped") == {}
+
+def test_delete_order_successfully(order_tracker, mock_storage):
+    """Tests that delete_order deletes an existing order."""
+    # Simulate that the storage finds an existing order
+    mock_storage.get_order.return_value = {"order_id": "ORD001", "item_name": "Laptop", "quantity": 1, "customer_id": "CUST001", "status": "pending"}
+
+    order_tracker.delete_order("ORD001")
+    mock_storage.delete_order.assert_called_once_with("ORD001")
+    
+def test_delete_order_raises_error_if_not_found(order_tracker, mock_storage):
+    """Tests that delete_order raises a ValueError if the order is not found."""
+    # Simulate that the storage finds no existing order
+    mock_storage.get_order.return_value = None
+
+    with pytest.raises(ValueError, match="Order with ID 'ORD001' does not exist."):
+        order_tracker.delete_order("ORD001")
+
+    mock_storage.delete_order.assert_not_called()

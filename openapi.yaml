@@ -1,0 +1,186 @@
+openapi: 3.0.3
+info:
+  title: Order Tracker API
+  description: REST API for managing customer orders.
+  version: 1.0.0
+
+servers:
+  - url: http://127.0.0.1:8080
+    description: Local development server
+
+paths:
+  /api/orders:
+    get:
+      summary: List all orders
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter orders by status (e.g. pending, shipped)
+      responses:
+        "200":
+          description: List of orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+    post:
+      summary: Create a new order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrderRequest"
+      responses:
+        "201":
+          description: Order created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  order_id:
+                    type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/orders/{order_id}:
+    get:
+      summary: Get one order by ID
+      parameters:
+        - $ref: "#/components/parameters/OrderId"
+      responses:
+        "200":
+          description: Order found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      summary: Delete an order
+      parameters:
+        - $ref: "#/components/parameters/OrderId"
+      responses:
+        "200":
+          description: Order deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/orders/{order_id}/status:
+    put:
+      summary: Update order status
+      parameters:
+        - $ref: "#/components/parameters/OrderId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - new_status
+              properties:
+                new_status:
+                  type: string
+                  example: shipped
+      responses:
+        "200":
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  parameters:
+    OrderId:
+      name: order_id
+      in: path
+      required: true
+      schema:
+        type: string
+      example: ORD001
+
+  schemas:
+    Order:
+      type: object
+      properties:
+        order_id:
+          type: string
+        item_name:
+          type: string
+        quantity:
+          type: integer
+        customer_id:
+          type: string
+        status:
+          type: string
+          example: pending
+    CreateOrderRequest:
+      type: object
+      required:
+        - order_id
+        - item_name
+        - quantity
+        - customer_id
+      properties:
+        order_id:
+          type: string
+        item_name:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+        customer_id:
+          type: string
+        status:
+          type: string
+          default: pending
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+
+  responses:
+    BadRequest:
+      description: Invalid request (bad JSON, missing fields, duplicate order)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Order or resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    MethodNotAllowed:
+      description: HTTP method not allowed for this endpoint
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"

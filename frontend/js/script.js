@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const listAllOrdersBtn = document.getElementById('list-all-orders-btn');
     const filterStatusSelect = document.getElementById('filter-status');
     const ordersTableBody = document.getElementById('orders-table-body');
+    const deleteOrderForm = document.getElementById('delete-order-form');
 
     function showMessage(message, type) {
         messageContainer.textContent = message;
@@ -80,6 +81,21 @@ document.addEventListener('DOMContentLoaded', () => {
             updateStatusForm.reset();
             fetchAndRenderOrders();
         } catch (error) { showMessage(`Failed to update status: ${error.message}`, 'error'); }
+    });
+
+    deleteOrderForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const orderId = document.getElementById('delete-order-id').value.trim();
+        if (!orderId) { showMessage('Please enter an Order ID.', 'error'); return; }
+        try {
+            const response = await fetch(`/api/orders/${orderId}`, { method: 'DELETE' });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error);
+            showMessage(`Order ${orderId} deleted.`, 'success');
+            deleteOrderForm.reset();
+            fetchAndRenderOrders();
+        }
+        catch (error) { showMessage(`Failed to delete order: ${error.message}`, 'error'); }
     });
 
     listAllOrdersBtn.addEventListener('click', () => { filterStatusSelect.value = ''; fetchAndRenderOrders(); });
